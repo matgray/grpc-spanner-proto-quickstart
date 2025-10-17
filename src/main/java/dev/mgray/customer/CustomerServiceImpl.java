@@ -1,51 +1,135 @@
 package dev.mgray.customer;
 
-import com.google.cloud.ByteArray;
-import com.google.cloud.spanner.*;
-import com.google.common.collect.ImmutableList;
-import dev.mgray.customer.AddCustomerRequest;
-import dev.mgray.customer.AddCustomerResponse;
-import dev.mgray.customer.CustomerInfo;
-import dev.mgray.customer.CustomerServiceGrpc;
+import static com.google.cloud.ByteArray.copyFrom;
+import static dev.mgray.CustomerService.CustomerServiceOuterClass.*;
+import static dev.mgray.customer.SessionIdGenerator.generateRandomSessionId;
+
+import com.google.cloud.spanner.DatabaseClient;
+import com.google.cloud.spanner.DatabaseId;
+import com.google.cloud.spanner.ErrorCode;
+import com.google.cloud.spanner.ResultSet;
+import com.google.cloud.spanner.Spanner;
+import com.google.cloud.spanner.SpannerException;
+import com.google.cloud.spanner.SpannerOptions;
+import com.google.cloud.spanner.Statement;
+import dev.mgray.CustomerService.CustomerServiceGrpc;
+import dev.mgray.schema.customer.CustomerInfo;
+import dev.mgray.schema.customer.Session;
 import io.grpc.stub.StreamObserver;
-import java.util.Collections;
 
 public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImplBase {
+    private static final String INSERT_CUSTOMER_SQL =
+            "INSERT INTO Customer (UserName, Info) VALUES (@user_name, @info) THEN RETURN CustomerId";
+    private static final String INSERT_SESSION_SQL =
+            "INSERT INTO Customer (Session) VALUES (@session) WHERE CustomerId=@customerId";
 
-  private final DatabaseClient dbClient;
+    private final DatabaseClient dbClient;
 
-  public CustomerServiceImpl() {
-    SpannerOptions options = SpannerOptions.newBuilder()
-        .setEmulatorHost("localhost:9010")
-        .build();
-    Spanner spanner = options.getService();
-
-    String projectId = "test-project";
-    String instanceId = "test-instance";
-    String databaseId = "test-db";
-    DatabaseId db = DatabaseId.of(projectId, instanceId, databaseId);
-    this.dbClient = spanner.getDatabaseClient(db);
-  }
-
-  @Override
-  public void addCustomer(AddCustomerRequest request, StreamObserver<AddCustomerResponse> responseObserver) {
-    final CustomerInfo customerInfo = request.getCustomerInfo();
-    long customerId = dbClient.readWriteTransaction().run(transaction -> {
-      String sql = "INSERT INTO Customer (Info) VALUES (@info) THEN RETURN CustomerId";
-      com.google.cloud.spanner.Statement statement = com.google.cloud.spanner.Statement.newBuilder(sql)
-          .bind("info").to(com.google.cloud.ByteArray.copyFrom(customerInfo.toByteArray()))
-          .build();
-      try (com.google.cloud.spanner.ResultSet resultSet = transaction.executeQuery(statement)) {
-        if (resultSet.next()) {
-          return resultSet.getLong(0);
-        } else {
-          throw new RuntimeException("Failed to retrieve generated CustomerId");
+    public CustomerServiceImpl() {
+        String spannerHost = System.getenv("SPANNER_EMULATOR_HOST");
+        if (spannerHost == null) {
+            spannerHost = "localhost:9010";
         }
-      }
-    });
 
-    AddCustomerResponse response = AddCustomerResponse.newBuilder().setCustomerId(customerId).build();
-    responseObserver.onNext(response);
-    responseObserver.onCompleted();
-  }
+        SpannerOptions options = SpannerOptions.newBuilder()
+                .setEmulatorHost(spannerHost)
+                .setProjectId("test-project")
+                .build();
+        Spanner spanner = options.getService();
+
+        String projectId = "test-project";
+        String instanceId = "test-instance";
+        String databaseId = "test-db";
+        DatabaseId db = DatabaseId.of(projectId, instanceId, databaseId);
+        this.dbClient = spanner.getDatabaseClient(db);
+    }
+
+    @Override
+    public void addCustomer(AddCustomerRequest request, StreamObserver<LoginResponse> responseObserver) {
+        final CustomerInfo customerInfo = request.getCustomerInfo();
+        LoginResponse resp;
+        try {
+            insertCustomerAndReturnId(customerInfo);
+            resp = login(
+                    LoginRequest.newBuilder()
+                            .setUsernamePassword(UserNamePasswordBundle.newBuilder()
+                                    .setUserName(request.getCustomerInfo().getUserName())
+                                    .setPassword(request.getCustomerInfo().getPassword()))
+                            .build());
+        } catch (SpannerException se) {
+            if (se.getErrorCode() == ErrorCode.ALREADY_EXISTS) {
+                resp = LoginResponse.newBuilder().setErrorCode(LoginErrorCode.USER_NAME_ALREADY_IN_USE).build();
+            } else {
+                resp = LoginResponse.newBuilder().setErrorCode(LoginErrorCode.UNKNOWN).build();
+            }
+        }
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
+        if (request.hasUsernamePassword()) {
+            Statement stmt = Statement.newBuilder("SELECT CustomerId, Info FROM Customer WHERE UserName = @userName")
+                    .bind("userName").to(request.getUsernamePassword().getUserName())
+                    .build();
+            try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
+                if (rs.next()) {
+                    long customerId = rs.getLong("CustomerId");
+                    responseObserver.onNext(LoginResponse.newBuilder().setCustomerId(customerId).setSession(newSession(customerId)).build());
+                }
+            }
+        }
+        responseObserver.onCompleted();
+    }
+
+    private LoginResponse login(LoginRequest request) {
+        if (request.hasUsernamePassword()) {
+            Statement stmt = Statement.newBuilder("SELECT CustomerId, Info FROM Customer WHERE UserName = @userName")
+                    .bind("userName").to(request.getUsernamePassword().getUserName())
+                    .build();
+            try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
+                if (rs.next()) {
+                    long customerId = rs.getLong("CustomerId");
+                    return LoginResponse.newBuilder()
+                            .setCustomerId(customerId)
+                            .setSession(newSession(customerId))
+                            .build();
+                }
+            }
+        }
+        return null;
+    }
+
+    // Extracted method for better readability and reuse
+    private long insertCustomerAndReturnId(CustomerInfo customerInfo) throws SpannerException {
+        try {
+            return dbClient.readWriteTransaction().run(transaction -> {
+                Statement statement = Statement.newBuilder(INSERT_CUSTOMER_SQL)
+                        .bind("user_name").to(customerInfo.getUserName())
+                        .bind("info").to(copyFrom(customerInfo.toByteArray()))
+                        .build();
+                try (ResultSet resultSet = transaction.executeQuery(statement)) {
+                    if (resultSet.next()) {
+                        return resultSet.getLong(0);
+                    } else {
+                        throw new RuntimeException("Failed to retrieve generated CustomerId");
+                    }
+                }
+            });
+        } catch (Exception e) {
+            return -1L;
+        }
+    }
+
+    private Session newSession(long customerId) {
+        Session s = Session.newBuilder().setSessionId(generateRandomSessionId(32)).build();
+        dbClient.readWriteTransaction().run(tx -> {
+            Statement statement = Statement.newBuilder(INSERT_SESSION_SQL)
+                    .bind("customerId").to(customerId).build();
+            tx.executeQuery(statement);
+            return null;
+        });
+        return s;
+    }
 }

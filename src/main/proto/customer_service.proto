@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "customer.proto";
+
+package dev.mgray.CustomerService;
+
+service CustomerService {
+  rpc AddCustomer(AddCustomerRequest) returns (LoginResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+message AddCustomerRequest {
+  .dev.mgray.schema.Customer.CustomerInfo customer_info = 1;
+}
+
+message LoginRequest {
+  oneof method {
+    UserNamePasswordBundle username_password = 1;
+    .dev.mgray.schema.Customer.Session session = 2;
+  }
+}
+
+message UserNamePasswordBundle {
+  string user_name = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  int64 customer_id = 1;
+  .dev.mgray.schema.Customer.Session session = 2;
+  LoginErrorCode error_code = 3;
+}
+
+enum LoginErrorCode {
+  UNKNOWN = 0;
+  USER_NAME_ALREADY_IN_USE = 1;
+}
