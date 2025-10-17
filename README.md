@@ -70,32 +70,6 @@ export SPANNER_EMULATOR_HOST=localhost:9010 && gcloud spanner databases execute-
 
 ## Docker Compose
 
-To build and run the gRPC server using Docker Compose (with a standalone Spanner emulator):
-
-1.  **Start the Spanner Emulator (standalone)**
-
-    ```bash
-docker run -p 9010:9010 -p 9020:9020 gcr.io/cloud-spanner-emulator/emulator
-    ```
-
-2.  **Populate the Spanner database**
-
-    Open a new terminal and run:
-
-    ```bash
-./db/populate_db.sh
-    ```
-
-3.  **Build the Docker image for the gRPC server**
-
-    ```bash
-docker-compose build
-    ```
-
-4.  **Run the gRPC server service**
-
-    ```bash
-docker-compose up
-    ```
-
-    The gRPC server will be accessible on `localhost:8080`.
+```bash
+docker-compose up --build
+```
