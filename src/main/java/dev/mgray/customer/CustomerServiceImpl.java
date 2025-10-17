@@ -103,7 +103,6 @@ public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImpl
 
     // Extracted method for better readability and reuse
     private long insertCustomerAndReturnId(CustomerInfo customerInfo) throws SpannerException {
-        try {
             return dbClient.readWriteTransaction().run(transaction -> {
                 Statement statement = Statement.newBuilder(INSERT_CUSTOMER_SQL)
                         .bind("user_name").to(customerInfo.getUserName())
@@ -117,9 +116,6 @@ public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImpl
                     }
                 }
             });
-        } catch (Exception e) {
-            return -1L;
-        }
     }
 
     private Session newSession(long customerId) {

@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  spanner-emulator:
+    image: gcr.io/cloud-spanner-emulator/emulator
+    ports:
+      - "9010:9010" # Spanner emulator port
+      - "9020:9020" # Spanner emulator REST port
+
+  grpc-server:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - spanner-emulator
+    environment:
+      - SPANNER_EMULATOR_HOST=spanner-emulator:9010
+      - SPANNER_PROJECT_ID=test-project
+      - SPANNER_INSTANCE_ID=test-instance
+      - SPANNER_DATABASE_ID=test-db
