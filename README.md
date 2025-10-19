@@ -41,6 +41,25 @@ from SQL DDL.
     ```bash
     mvn clean install
     ```
+
+    You can skip the schema generation process by setting the `skipSchemaGeneration` Maven property to `true`:
+
+    ```bash
+    mvn clean install -DskipSchemaGeneration=true
+    ```
+
+    This is useful for faster builds when the schema has not changed.
+
+## Only Generate Schema
+
+If you only want to generate the schema files (e.g., `CustomerSchema.java` and `SqlProvider.java`) without performing a full Maven build, you can directly execute the schema generation script:
+
+```bash
+./run_generator.sh
+```
+
+This script will start the Spanner emulator, populate the database, generate the schema files, and then shut down the emulator.
+
 ## Running the Server
 
 To run the gRPC server:
