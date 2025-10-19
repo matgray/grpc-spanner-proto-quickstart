@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "customer.proto";
 
-package dev.mgray.CustomerService;
+package dev.mgray.server.service.customer;
 
 service CustomerService {
   rpc AddCustomer(AddCustomerRequest) returns (LoginResponse);
@@ -10,13 +10,13 @@ service CustomerService {
 }
 
 message AddCustomerRequest {
-  .dev.mgray.schema.Customer.CustomerInfo customer_info = 1;
+  .dev.mgray.db.schema.customer.CustomerInfo customer_info = 1;
 }
 
 message LoginRequest {
   oneof method {
     UserNamePasswordBundle username_password = 1;
-    .dev.mgray.schema.Customer.Session session = 2;
+    .dev.mgray.db.schema.customer.Session session = 2;
   }
 }
 
@@ -27,7 +27,7 @@ message UserNamePasswordBundle {
 
 message LoginResponse {
   int64 customer_id = 1;
-  .dev.mgray.schema.Customer.Session session = 2;
+  .dev.mgray.db.schema.customer.Session session = 2;
   LoginErrorCode error_code = 3;
 }
 

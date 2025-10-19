@@ -12,7 +12,6 @@ def generate_schema_files():
     project_id = "test-project"
     instance_id = sys.argv[1] if len(sys.argv) > 1 else "test-instance"
     database_id = sys.argv[2] if len(sys.argv) > 2 else "test-db"
-    output_dir = 'target/generated-sources/dev/mgray/schema'
     template_dir = 'src/main/resources/templates'
 
     os.environ["SPANNER_EMULATOR_HOST"] = "localhost:9010"
@@ -44,10 +43,11 @@ def generate_schema_files():
             column_vars.append({'name': variable_name, 'value': col})
 
         output_content = template.render(
-            package_name='dev.mgray.schema',
+            package_name='dev.mgray.db.schema.%s' % table_name.lower(),
             class_name=class_name,
             columns=column_vars
         )
+        output_dir = 'target/generated-sources/dev/mgray/db/schema.%s' % table_name.lower()
 
         os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, class_name + '.java')

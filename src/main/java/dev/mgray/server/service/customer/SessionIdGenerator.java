@@ -1,4 +1,4 @@
-package dev.mgray.customer;
+package dev.mgray.server.service.customer;
 
 import java.security.SecureRandom;
 import java.util.Base64;

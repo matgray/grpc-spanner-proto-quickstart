@@ -1,7 +1,6 @@
 package dev.mgray.server;
 
-import dev.mgray.customer.CustomerServiceImpl;
-import io.grpc.ServerBuilder;
+import dev.mgray.server.service.customer.CustomerServiceImpl;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import java.io.IOException;
 import java.net.InetSocketAddress;

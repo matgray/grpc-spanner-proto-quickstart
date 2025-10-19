@@ -1,8 +1,8 @@
-package dev.mgray.customer;
+package dev.mgray.server.service.customer;
 
 import static com.google.cloud.ByteArray.copyFrom;
-import static dev.mgray.CustomerService.CustomerServiceOuterClass.*;
-import static dev.mgray.customer.SessionIdGenerator.generateRandomSessionId;
+import static dev.mgray.server.service.customer.CustomerServiceGrpc.*;
+import static dev.mgray.server.service.customer.SessionIdGenerator.generateRandomSessionId;
 
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.DatabaseId;
@@ -12,16 +12,16 @@ import com.google.cloud.spanner.Spanner;
 import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.spanner.SpannerOptions;
 import com.google.cloud.spanner.Statement;
-import dev.mgray.CustomerService.CustomerServiceGrpc;
-import dev.mgray.schema.CustomerSchema;
+import dev.mgray.db.schema.customer.CustomerSchema;
 import dev.mgray.schema.customer.CustomerInfo;
 import dev.mgray.schema.customer.Session;
+import dev.mgray.server.service.customer.CustomerServiceOuterClass.*;
 import io.grpc.stub.StreamObserver;
 
-public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImplBase {
-    private static final String INSERT_CUSTOMER_SQL = 
+public class CustomerServiceImpl extends CustomerServiceImplBase {
+    private static final String INSERT_CUSTOMER_SQL =
             String.format("INSERT INTO Customer (%s, %s) VALUES (@user_name, @info) THEN RETURN %s", CustomerSchema.USER_NAME, CustomerSchema.INFO, CustomerSchema.CUSTOMER_ID);
-    private static final String INSERT_SESSION_SQL = 
+    private static final String INSERT_SESSION_SQL =
             String.format("INSERT INTO Customer (%s) VALUES (@session) WHERE %s=@customerId", CustomerSchema.SESSION, CustomerSchema.CUSTOMER_ID);
 
     private final DatabaseClient dbClient;
@@ -86,12 +86,12 @@ public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImpl
 
     private LoginResponse login(LoginRequest request) {
         if (request.hasUsernamePassword()) {
-            Statement stmt = Statement.newBuilder(String.format("SELECT %s, %s FROM Customer WHERE %s = @userName", CustomerSchema.CUSTOMER_ID, CustomerSchema.INFO, CustomerSchema.USER_NAME))
+            Statement stmt = Statement.newBuilder(String.format("SELECT %s, %s FROM Customer WHERE %s = @userName", "","",""))
                     .bind("userName").to(request.getUsernamePassword().getUserName())
                     .build();
             try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
                 if (rs.next()) {
-                    long customerId = rs.getLong(CustomerSchema.CUSTOMER_ID);
+                    long customerId = rs.getLong("");
                     return LoginResponse.newBuilder()
                             .setCustomerId(customerId)
                             .setSession(newSession(customerId))
