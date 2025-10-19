@@ -13,15 +13,16 @@ import com.google.cloud.spanner.SpannerException;
 import com.google.cloud.spanner.SpannerOptions;
 import com.google.cloud.spanner.Statement;
 import dev.mgray.CustomerService.CustomerServiceGrpc;
+import dev.mgray.schema.CustomerSchema;
 import dev.mgray.schema.customer.CustomerInfo;
 import dev.mgray.schema.customer.Session;
 import io.grpc.stub.StreamObserver;
 
 public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImplBase {
-    private static final String INSERT_CUSTOMER_SQL =
-            "INSERT INTO Customer (UserName, Info) VALUES (@user_name, @info) THEN RETURN CustomerId";
-    private static final String INSERT_SESSION_SQL =
-            "INSERT INTO Customer (Session) VALUES (@session) WHERE CustomerId=@customerId";
+    private static final String INSERT_CUSTOMER_SQL = 
+            String.format("INSERT INTO Customer (%s, %s) VALUES (@user_name, @info) THEN RETURN %s", CustomerSchema.USER_NAME, CustomerSchema.INFO, CustomerSchema.CUSTOMER_ID);
+    private static final String INSERT_SESSION_SQL = 
+            String.format("INSERT INTO Customer (%s) VALUES (@session) WHERE %s=@customerId", CustomerSchema.SESSION, CustomerSchema.CUSTOMER_ID);
 
     private final DatabaseClient dbClient;
 
@@ -70,12 +71,12 @@ public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImpl
     @Override
     public void login(LoginRequest request, StreamObserver<LoginResponse> responseObserver) {
         if (request.hasUsernamePassword()) {
-            Statement stmt = Statement.newBuilder("SELECT CustomerId, Info FROM Customer WHERE UserName = @userName")
+            Statement stmt = Statement.newBuilder(String.format("SELECT %s, %s FROM Customer WHERE %s = @userName", CustomerSchema.CUSTOMER_ID, CustomerSchema.INFO, CustomerSchema.USER_NAME))
                     .bind("userName").to(request.getUsernamePassword().getUserName())
                     .build();
             try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
                 if (rs.next()) {
-                    long customerId = rs.getLong("CustomerId");
+                    long customerId = rs.getLong(CustomerSchema.CUSTOMER_ID);
                     responseObserver.onNext(LoginResponse.newBuilder().setCustomerId(customerId).setSession(newSession(customerId)).build());
                 }
             }
@@ -85,12 +86,12 @@ public class CustomerServiceImpl extends CustomerServiceGrpc.CustomerServiceImpl
 
     private LoginResponse login(LoginRequest request) {
         if (request.hasUsernamePassword()) {
-            Statement stmt = Statement.newBuilder("SELECT CustomerId, Info FROM Customer WHERE UserName = @userName")
+            Statement stmt = Statement.newBuilder(String.format("SELECT %s, %s FROM Customer WHERE %s = @userName", CustomerSchema.CUSTOMER_ID, CustomerSchema.INFO, CustomerSchema.USER_NAME))
                     .bind("userName").to(request.getUsernamePassword().getUserName())
                     .build();
             try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
                 if (rs.next()) {
-                    long customerId = rs.getLong("CustomerId");
+                    long customerId = rs.getLong(CustomerSchema.CUSTOMER_ID);
                     return LoginResponse.newBuilder()
                             .setCustomerId(customerId)
                             .setSession(newSession(customerId))
