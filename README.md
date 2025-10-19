@@ -1,4 +1,4 @@
-# Vibe gRPC Server
+# mgray.dev starterkit for a gRPC server with spanner + proto integration
 
 This project contains a gRPC server that interacts with a Google Cloud Spanner database.
 It demonstrates how to manage customer data, including adding new customers and handling user logins.
