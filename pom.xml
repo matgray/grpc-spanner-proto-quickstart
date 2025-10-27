@@ -15,7 +15,7 @@
     <spanner.version>6.49.0</spanner.version>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <skipSchemaGeneration>false</skipSchemaGeneration>
+    <skipSchemaGeneration>true</skipSchemaGeneration>
   </properties>
 
   <dependencies>
@@ -85,6 +85,7 @@
             <configuration>
               <sources>
                 <source>${project.build.directory}/generated-sources</source>
+                <source>${project.basedir}/.generated-schema/</source>
               </sources>
             </configuration>
           </execution>

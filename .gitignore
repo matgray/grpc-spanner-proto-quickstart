@@ -8,6 +8,8 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 venv
+package-lock.json
+./.generated-schema
 
 # Java
 *.class

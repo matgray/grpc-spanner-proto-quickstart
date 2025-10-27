@@ -47,7 +47,7 @@ def generate_schema_files():
             class_name=class_name,
             columns=column_vars
         )
-        output_dir = 'target/generated-sources/dev/mgray/db/schema.%s' % table_name.lower()
+        output_dir = './generated-schema/java/dev/mgray/db/schema.%s' % table_name.lower()
 
         os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, class_name + '.java')

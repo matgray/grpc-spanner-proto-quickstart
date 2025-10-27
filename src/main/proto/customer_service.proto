@@ -11,6 +11,7 @@ service CustomerService {
 
 message AddCustomerRequest {
   .dev.mgray.db.schema.customer.CustomerInfo customer_info = 1;
+  string password = 2;
 }
 
 message LoginRequest {
@@ -34,4 +35,5 @@ message LoginResponse {
 enum LoginErrorCode {
   UNKNOWN = 0;
   USER_NAME_ALREADY_IN_USE = 1;
+  INVALID_CREDENTIALS = 2;
 }

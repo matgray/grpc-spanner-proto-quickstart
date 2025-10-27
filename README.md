@@ -1,10 +1,6 @@
-# mgray.dev starterkit for a gRPC server with spanner + proto integration
+# Vibe gRPC Server
 
-This project contains a gRPC server that interacts with a Google Cloud Spanner database.
-It demonstrates how to manage customer data, including adding new customers and handling user logins.
-
-The project emphasizes what I feel are some best practices for database schema management by generating Java constants
-from SQL DDL.
+This project contains a gRPC server that interacts with a Google Cloud Spanner database. It demonstrates how to manage customer data, including adding new customers and handling user logins. The project emphasizes best practices for database schema management by generating Java constants from SQL DDL and externalizing SQL queries into separate files.
 
 ## Prerequisites
 
@@ -25,24 +21,33 @@ from SQL DDL.
     ./venv/bin/pip install sql-metadata jinja2 google-cloud-spanner
     ```
 
-2.  **Build the Project (and Generate Schema Files)**
+2.  **Generate Schema Files (Local Development)**
 
-    The Maven build process will automatically:
+    Before building the project or running `docker-compose up --build`, you need to generate the schema files locally. This process involves starting a Spanner emulator, populating it with your DDL, and then extracting the schema information to generate Java classes.
+
+    Run the following command to generate the schema files:
+
+    ```bash
+    ./run_generator.sh
+    ```
+
+    This script will:
     *   Start a Spanner emulator instance using Docker Compose.
     *   Create a dedicated Spanner instance and database for schema generation.
-    *   Populate the database with the DDLs from `db_schema/*_ddl.sql`.
-    *   Extract table and column names from the running Spanner emulator to generate 
-    *   `*Schema.java` (containing Java constants for column names).
-    *   Compile the entire project.
+    *   Populate the database with the DDL from `db_schema/customer_ddl.sql`.
+    *   Extract table and column names from the running Spanner emulator to generate `CustomerSchema.java` (containing Java constants for column names).
+    *   Extract SQL statements from `src/main/resources/sql/*.sql` files to generate `SqlProvider.java` (containing methods to retrieve formatted SQL queries).
     *   Stop and remove the Spanner emulator instance.
 
-    Run the following command to build the project:
+3.  **Build the Project**
+
+    After generating the schema files, compile the project using Maven:
 
     ```bash
     mvn clean install
     ```
 
-    You can skip the schema generation process by setting the `skipSchemaGeneration` Maven property to `true`:
+    You can skip the schema generation process during a full Maven build by setting the `skipSchemaGeneration` Maven property to `true`:
 
     ```bash
     mvn clean install -DskipSchemaGeneration=true
@@ -50,29 +55,29 @@ from SQL DDL.
 
     This is useful for faster builds when the schema has not changed.
 
-## Only Generate Schema
+## Only Generate gRPC Code
 
-If you only want to generate the schema files (e.g., `CustomerSchema.java` and `SqlProvider.java`) without performing a full Maven build, you can directly execute the schema generation script:
+If you only want to generate the gRPC-related Java code from the `.proto` files (e.g., `CustomerServiceGrpc.java` and the message classes), you can run the `protobuf-maven-plugin` goals directly:
 
 ```bash
-./run_generator.sh
+mvn protobuf:compile protobuf:compile-custom
 ```
 
-This script will start the Spanner emulator, populate the database, generate the schema files, and then shut down the emulator.
+This will generate the Java source files in `target/generated-sources/protobuf/java` and `target/generated-sources/protobuf/grpc-java`.
 
 ## Running the Server
 
 To run the gRPC server:
 
 ```bash
-java -cp target/mgray-dev-starterkit-1.0-SNAPSHOT.jar dev.mgray.server.Server [port]
+java -cp target/vibe-grpc-1.0-SNAPSHOT.jar dev.mgray.server.Server [port]
 ```
 
-The server will start on port 8080 by default.
+The server will start on port 8080 by default. You can specify a different port by passing it as a command-line argument.
 
 ## Interacting with the Server using `grpcurl`
 
-`grpcurl` is a command-line tool for interacting with gRPC servers.
+`grpcurl` is a command-line tool for interacting with gRPC servers. Ensure your gRPC server is running before executing these commands.
 
 ### Add a New Customer
 
@@ -82,10 +87,10 @@ This command adds a new customer to the system.
 grpcurl -plaintext -d '{
   "customer_info": {
     "display_name": "Test User",
-    "user_name": "testuser",
-    "password": "password"
-  }
-}' localhost:8080 dev.mgray.CustomerService.CustomerService/AddCustomer
+    "user_name": "testuser"
+  },
+  "password": "password"
+}' localhost:8080 dev.mgray.server.service.customer.CustomerService/AddCustomer
 ```
 
 ### Log In a User
@@ -100,7 +105,7 @@ grpcurl -plaintext -d '{
     "user_name": "testuser",
     "password": "password"
   }
-}' localhost:8080 dev.mgray.CustomerService.CustomerService/Login
+}' localhost:8080 dev.mgray.server.service.customer.CustomerService/Login
 ```
 
 **Using a session ID:**
@@ -110,16 +115,15 @@ grpcurl -plaintext -d '{
   "session": {
     "session_id": "your_session_id_here"
   }
-}' localhost:8080 dev.mgray.CustomerService.CustomerService/Login
+}' localhost:8080 dev.mgray.server.service.customer.CustomerService/Login
 ```
 
 ## Debugging
 
-To run the server in debug mode, you can enable the remote debugger agent on port 5005.
-This will allow you to attach a remote debugger to the running server.
+To run the server in debug mode, you can enable the remote debugger agent on port 5005. This will allow you to attach a remote debugger to the running server.
 
 ```bash
-java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar target/mgray-dev-starterkit-1.0-SNAPSHOT.jar
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar target/vibe-grpc-1.0-SNAPSHOT.jar
 ```
 
 ## Querying Customer Data in Spanner Emulator
