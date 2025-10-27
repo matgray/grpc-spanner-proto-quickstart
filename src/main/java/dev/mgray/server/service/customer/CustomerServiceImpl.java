@@ -4,14 +4,7 @@ import static com.google.cloud.ByteArray.copyFrom;
 import static dev.mgray.server.service.customer.CustomerServiceGrpc.*;
 import static dev.mgray.server.service.customer.SessionIdGenerator.generateRandomSessionId;
 
-import com.google.cloud.spanner.DatabaseClient;
-import com.google.cloud.spanner.DatabaseId;
-import com.google.cloud.spanner.ErrorCode;
-import com.google.cloud.spanner.ResultSet;
-import com.google.cloud.spanner.Spanner;
-import com.google.cloud.spanner.SpannerException;
-import com.google.cloud.spanner.SpannerOptions;
-import com.google.cloud.spanner.Statement;
+import com.google.cloud.spanner.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dev.mgray.db.schema.customer.CustomerSchema;
 import dev.mgray.schema.customer.CustomerInfo;
@@ -90,6 +83,7 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
                 responseObserver.onNext(LoginResponse.newBuilder().setErrorCode(LoginErrorCode.UNKNOWN).build());
             }
         }
+        responseObserver.onCompleted();
     }
 
     private LoginResponse login(LoginRequest request) throws InvalidProtocolBufferException {
@@ -99,7 +93,7 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
                     .build();
             try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
                 if (rs.next()) {
-                    Security security = Security.parseFrom(rs.getBytes(CustomerSchema.SECURITY).toByteArray());
+                    Security security = rs.getProtoMessage(CustomerSchema.SECURITY, Security.getDefaultInstance());
                     if (!security.getPassword().equals(hashPassword(request.getUsernamePassword().getPassword(), security.getSalt()))) {
                         return LoginResponse.newBuilder()
                                 .setErrorCode(LoginErrorCode.INVALID_CREDENTIALS)
@@ -126,8 +120,8 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
             return dbClient.readWriteTransaction().run(transaction -> {
                 Statement statement = Statement.newBuilder(INSERT_CUSTOMER_SQL)
                         .bind("user_name").to(customerInfo.getUserName())
-                        .bind("info").to(copyFrom(customerInfo.toByteArray()))
-                        .bind("security").to(copyFrom(s.build().toByteArray()))
+                        .bind("info").to(customerInfo)
+                        .bind("security").to(s.build())
                         .build();
                 try (ResultSet resultSet = transaction.executeQuery(statement)) {
                     if (resultSet.next()) {
