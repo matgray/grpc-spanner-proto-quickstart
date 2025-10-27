@@ -1,4 +1,4 @@
-# Vibe gRPC Server
+# mgray.dev starterkit for a gRPC server with spanner + proto integration
 
 This project contains a gRPC server that interacts with a Google Cloud Spanner database. It demonstrates how to manage customer data, including adding new customers and handling user logins. The project emphasizes best practices for database schema management by generating Java constants from SQL DDL and externalizing SQL queries into separate files.
 
@@ -70,7 +70,7 @@ This will generate the Java source files in `target/generated-sources/protobuf/j
 To run the gRPC server:
 
 ```bash
-java -cp target/vibe-grpc-1.0-SNAPSHOT.jar dev.mgray.server.Server [port]
+java -cp target/mgray-dev-starterkit-1.0-SNAPSHOT.jar dev.mgray.server.Server [port]
 ```
 
 The server will start on port 8080 by default. You can specify a different port by passing it as a command-line argument.
@@ -123,7 +123,7 @@ grpcurl -plaintext -d '{
 To run the server in debug mode, you can enable the remote debugger agent on port 5005. This will allow you to attach a remote debugger to the running server.
 
 ```bash
-java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar target/vibe-grpc-1.0-SNAPSHOT.jar
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar target/mgray-dev-starterkit-1.0-SNAPSHOT.jar
 ```
 
 ## Querying Customer Data in Spanner Emulator
