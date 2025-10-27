@@ -1,10 +1,17 @@
 package dev.mgray.server.service.customer;
 
-import static com.google.cloud.ByteArray.copyFrom;
+import static com.google.protobuf.util.Timestamps.fromMillis;
 import static dev.mgray.server.service.customer.CustomerServiceGrpc.*;
 import static dev.mgray.server.service.customer.SessionIdGenerator.generateRandomSessionId;
 
-import com.google.cloud.spanner.*;
+import com.google.cloud.spanner.DatabaseClient;
+import com.google.cloud.spanner.DatabaseId;
+import com.google.cloud.spanner.ErrorCode;
+import com.google.cloud.spanner.ResultSet;
+import com.google.cloud.spanner.Spanner;
+import com.google.cloud.spanner.SpannerException;
+import com.google.cloud.spanner.SpannerOptions;
+import com.google.cloud.spanner.Statement;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dev.mgray.db.schema.customer.CustomerSchema;
 import dev.mgray.schema.customer.CustomerInfo;
@@ -13,9 +20,13 @@ import dev.mgray.schema.customer.Session;
 import dev.mgray.server.service.customer.CustomerServiceOuterClass.*;
 import io.grpc.stub.StreamObserver;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.Base64;
 
 public class CustomerServiceImpl extends CustomerServiceImplBase {
@@ -23,6 +34,14 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
             String.format("INSERT INTO Customer (%s, %s, %s) VALUES (@user_name, @info, @security) THEN RETURN %s", CustomerSchema.USER_NAME, CustomerSchema.INFO, CustomerSchema.SECURITY, CustomerSchema.CUSTOMER_ID);
     private static final String INSERT_SESSION_SQL =
             String.format("INSERT INTO Customer (%s) VALUES (@session) WHERE %s=@customerId", CustomerSchema.SESSION, CustomerSchema.CUSTOMER_ID);
+
+    // The hashing algorithm to use. PBKDF2 with HMAC-SHA256 is a widely used and recommended standard for password hashing.
+    private static final String HASH_ALGORITHM = "PBKDF2WithHmacSHA256";
+    // The number of iterations for the hashing function. 65536 is a good starting point.
+    // The number of iterations should be as high as possible without causing a noticeable delay for the user.
+    private static final int HASH_ITERATIONS = 65536;
+    // The desired length of the generated hash. 256 bits is a good length for SHA-256.
+    private static final int HASH_KEY_LENGTH = 256;
 
     private final DatabaseClient dbClient;
 
@@ -94,7 +113,8 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
             try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
                 if (rs.next()) {
                     Security security = rs.getProtoMessage(CustomerSchema.SECURITY, Security.getDefaultInstance());
-                    if (!security.getPassword().equals(hashPassword(request.getUsernamePassword().getPassword(), security.getSalt()))) {
+                    String hashedPassword = hashPassword(request.getUsernamePassword().getPassword(), security.getSalt());
+                    if (!MessageDigest.isEqual(hashedPassword.getBytes(), security.getPassword().getBytes())) {
                         return LoginResponse.newBuilder()
                                 .setErrorCode(LoginErrorCode.INVALID_CREDENTIALS)
                                 .build();
@@ -117,10 +137,14 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
         s.setSalt(salt);
         s.setPassword(hashPassword(password, salt));
 
+        CustomerInfo customerInfoWithTimestamp = customerInfo.toBuilder()
+                .setCreateTime(fromMillis(System.currentTimeMillis()))
+                .build();
+
             return dbClient.readWriteTransaction().run(transaction -> {
                 Statement statement = Statement.newBuilder(INSERT_CUSTOMER_SQL)
-                        .bind("user_name").to(customerInfo.getUserName())
-                        .bind("info").to(customerInfo)
+                        .bind("user_name").to(customerInfoWithTimestamp.getUserName())
+                        .bind("info").to(customerInfoWithTimestamp)
                         .bind("security").to(s.build())
                         .build();
                 try (ResultSet resultSet = transaction.executeQuery(statement)) {
@@ -142,18 +166,11 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
 
     private static String hashPassword(String password, String salt) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(salt.getBytes()); // Add salt to the hash
-            byte[] hashedPasswordBytes = md.digest(password.getBytes());
-
-            // Convert byte array to a hexadecimal string
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashedPasswordBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-
-        } catch (NoSuchAlgorithmException e) {
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), HASH_ITERATIONS, HASH_KEY_LENGTH);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
             return null;
         }
