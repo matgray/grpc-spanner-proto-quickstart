@@ -1,0 +1,22 @@
+<div class="profile-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Profile</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <mat-form-field>
+          <input matInput type="password" placeholder="Old Password" formControlName="oldPassword">
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput type="password" placeholder="New Password" formControlName="newPassword">
+        </mat-form-field>
+        <mat-form-field>
+          <input matInput type="password" placeholder="Confirm New Password" formControlName="confirmPassword">
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit" [disabled]="passwordForm.invalid">Change Password</button>
+      </form>
+      <mat-slide-toggle [checked]="isDarkTheme" (change)="toggleTheme()">Dark Theme</mat-slide-toggle>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,17 @@
+.overview-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.sidenav-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 200px;
+}
+
+.content {
+  padding: 20px;
+}
