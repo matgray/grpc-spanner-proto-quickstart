@@ -1,0 +1,19 @@
+.layout-container {
+  height: 100%;
+}
+
+.sidenav-container {
+  height: calc(100% - 64px);
+}
+
+.sidenav {
+  width: 200px;
+}
+
+.content {
+  padding: 20px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

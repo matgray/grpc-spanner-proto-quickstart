@@ -63,10 +63,7 @@ export class LoginComponent {
       this.grpcService.addCustomer(customerInfo, password).subscribe({
         next: (response) => {
           console.log('Sign up successful', response);
-          const session = response.session;
-          if (session) {
-            localStorage.setItem('session_id', session.sessionId);
-          }
+          localStorage.setItem('login_response', JSON.stringify(response));
           this.router.navigate(['/overview']);
         },
         error: (error) => {
@@ -82,10 +79,7 @@ export class LoginComponent {
             return;
           }
           console.log('Login successful', response);
-          const session = response.session;
-          if (session) {
-            localStorage.setItem('session_id', session.sessionId);
-          }
+          localStorage.setItem('login_response', JSON.stringify(response));
           this.router.navigate(['/overview']);
         },
         error: (error) => {
