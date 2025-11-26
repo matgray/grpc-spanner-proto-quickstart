@@ -1,1 +1,111 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$my-primary: mat.m2-define-palette(mat.$m2-indigo-palette, 500);
+$my-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
+
+$my-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $my-primary,
+    accent: $my-accent,
+  ),
+));
+
+@include mat.all-component-themes($my-theme);
+
+$my-dark-theme: mat.m2-define-dark-theme((
+  color: (
+    primary: $my-primary,
+    accent: $my-accent,
+  ),
+));
+
+.dark-theme {
+  @include mat.all-component-colors($my-dark-theme);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: mat.get-theme-color($my-theme, background, background);
+  margin: 0;
+}
+
+$deep-purple-amber-light: mat.m2-define-light-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-deep-purple-palette),
+    accent: mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400),
+  ),
+));
+$deep-purple-amber-dark: mat.m2-define-dark-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-deep-purple-palette),
+    accent: mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400),
+  ),
+));
+.deep-purple-amber-theme {
+  @include mat.all-component-colors($deep-purple-amber-light);
+}
+.dark-theme .deep-purple-amber-theme {
+  @include mat.all-component-colors($deep-purple-amber-dark);
+}
+
+$indigo-pink-light: mat.m2-define-light-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+    accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400),
+  ),
+));
+$indigo-pink-dark: mat.m2-define-dark-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+    accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400),
+  ),
+));
+.indigo-pink-theme {
+  @include mat.all-component-colors($indigo-pink-light);
+}
+.dark-theme .indigo-pink-theme {
+  @include mat.all-component-colors($indigo-pink-dark);
+}
+
+$pink-blue-grey-light: mat.m2-define-light-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-pink-palette),
+    accent: mat.m2-define-palette(mat.$m2-blue-grey-palette, A200, A100, A400),
+  ),
+));
+$pink-blue-grey-dark: mat.m2-define-dark-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-pink-palette),
+    accent: mat.m2-define-palette(mat.$m2-blue-grey-palette, A200, A100, A400),
+  ),
+));
+.pink-blue-grey-theme {
+  @include mat.all-component-colors($pink-blue-grey-light);
+}
+.dark-theme .pink-blue-grey-theme {
+  @include mat.all-component-colors($pink-blue-grey-dark);
+}
+
+$purple-green-light: mat.m2-define-light-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-purple-palette),
+    accent: mat.m2-define-palette(mat.$m2-green-palette, A200, A100, A400),
+  ),
+));
+$purple-green-dark: mat.m2-define-dark-theme((
+  color: (
+    primary: mat.m2-define-palette(mat.$m2-purple-palette),
+    accent: mat.m2-define-palette(mat.$m2-green-palette, A200, A100, A400),
+  ),
+));
+.purple-green-theme {
+  @include mat.all-component-colors($purple-green-light);
+}
+.dark-theme .purple-green-theme {
+  @include mat.all-component-colors($purple-green-dark);
+}

@@ -17,6 +17,7 @@
           <mat-label>Password</mat-label>
           <input matInput type="password" formControlName="password">
         </mat-form-field>
+        <mat-error *ngIf="errorMessage">{{ errorMessage }}</mat-error>
         <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid">
           {{ isSignUp ? 'Sign Up' : 'Login' }}
         </button>

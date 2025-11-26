@@ -17,6 +17,17 @@
         <button mat-raised-button color="primary" type="submit" [disabled]="passwordForm.invalid">Change Password</button>
       </form>
       <mat-slide-toggle [checked]="isDarkTheme" (change)="toggleTheme()">Dark Theme</mat-slide-toggle>
+      <div class="color-scheme-container">
+        <h3>Color Scheme</h3>
+        <mat-form-field>
+          <mat-label>Color</mat-label>
+          <mat-select [(value)]="selectedColor" (selectionChange)="changeColorScheme()">
+            <mat-option *ngFor="let color of colors" [value]="color.value">
+              {{color.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
     </mat-card-content>
   </mat-card>
 </div>

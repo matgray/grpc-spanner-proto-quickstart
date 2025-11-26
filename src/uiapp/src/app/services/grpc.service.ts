@@ -1,57 +1,32 @@
 import { Injectable } from '@angular/core';
-import { CustomerServiceClient, ServiceError } from '../grpc/customer_service_pb_service';
-import { AddCustomerRequest, LoginRequest, LoginResponse, UserNamePasswordBundle } from '../grpc/customer_service_pb';
-import { CustomerInfo } from '../grpc/customer_pb';
+import { CustomerServiceClient } from '../grpc/customer-service.pbsc';
+import { AddCustomerRequest, LoginRequest, LoginResponse, UserNamePasswordBundle } from '../grpc/customer-service.pb';
+import { CustomerInfo } from '../grpc/customer.pb';
 import { Observable } from 'rxjs';
+import { GrpcStatusEvent } from '@ngx-grpc/common';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GrpcService {
 
-  private client: CustomerServiceClient;
-
-  constructor() {
-    this.client = new CustomerServiceClient('http://localhost:8080');
-  }
+  constructor(private client: CustomerServiceClient) { }
 
   addCustomer(customerInfo: CustomerInfo, password: string): Observable<LoginResponse> {
-    return new Observable<LoginResponse>(observer => {
-      const request = new AddCustomerRequest();
-      request.setCustomerInfo(customerInfo);
-      request.setPassword(password);
+    const request = new AddCustomerRequest();
+    request.customerInfo = customerInfo;
+    request.password = password;
 
-      this.client.addCustomer(request, (error: ServiceError | null, responseMessage: LoginResponse | null) => {
-        if (error) {
-          observer.error(error);
-        } else if (responseMessage) {
-          observer.next(responseMessage);
-          observer.complete();
-        } else {
-          observer.error(new Error('No response message'));
-        }
-      });
-    });
+    return this.client.addCustomer(request);
   }
 
   login(userName: string, password: string): Observable<LoginResponse> {
-    return new Observable<LoginResponse>(observer => {
-      const request = new LoginRequest();
-      const bundle = new UserNamePasswordBundle();
-      bundle.setUserName(userName);
-      bundle.setPassword(password);
-      request.setUsernamePassword(bundle);
+    const request = new LoginRequest();
+    const bundle = new UserNamePasswordBundle();
+    bundle.userName = userName;
+    bundle.password = password;
+    request.usernamePassword = bundle;
 
-      this.client.login(request, (error: ServiceError | null, responseMessage: LoginResponse | null) => {
-        if (error) {
-          observer.error(error);
-        } else if (responseMessage) {
-          observer.next(responseMessage);
-          observer.complete();
-        } else {
-          observer.error(new Error('No response message'));
-        }
-      });
-    });
+    return this.client.login(request);
   }
 }

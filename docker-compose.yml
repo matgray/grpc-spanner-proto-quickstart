@@ -9,8 +9,7 @@ services:
 
   grpc-server:
     build: .
-    ports:
-      - "8080:8080"
+    # No ports exposed directly, will be accessed through envoy
     depends_on:
       - spanner-emulator
     environment:
@@ -18,3 +17,20 @@ services:
       - SPANNER_PROJECT_ID=test-project
       - SPANNER_INSTANCE_ID=test-instance
       - SPANNER_DATABASE_ID=test-db
+
+  angular-app:
+    build:
+      context: ./src/uiapp
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+
+  envoy-proxy:
+    image: envoyproxy/envoy:v1.22-latest
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grpc-server
+    command: /bin/sh -c "sleep 15 && /docker-entrypoint.sh envoy -c /etc/envoy/envoy.yaml"

@@ -1,11 +1,9 @@
 .overview-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  height: 100%;
 }
 
 .sidenav-container {
-  height: 100%;
+  height: calc(100% - 64px);
 }
 
 .sidenav {
@@ -14,4 +12,8 @@
 
 .content {
   padding: 20px;
+}
+
+.spacer {
+  flex: 1 1 auto;
 }
