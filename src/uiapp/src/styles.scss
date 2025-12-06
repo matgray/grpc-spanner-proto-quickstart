@@ -109,3 +109,27 @@ $purple-green-dark: mat.m2-define-dark-theme((
 .dark-theme .purple-green-theme {
   @include mat.all-component-colors($purple-green-dark);
 }
+.grpc-debug-panel {
+  background-color: mat.get-theme-color($my-theme, background, card);
+  color: mat.get-theme-color($my-theme, foreground, text);
+}
+
+.dark-theme .grpc-debug-panel {
+  background-color: mat.get-theme-color($my-dark-theme, background, card);
+  color: mat.get-theme-color($my-dark-theme, foreground, text);
+}
+
+
+body.resizing {
+  user-select: none;
+}
+
+
+.splitter {
+  background-color: mat.get-theme-color($my-theme, primary);
+}
+
+.dark-theme .splitter {
+  background-color: mat.get-theme-color($my-dark-theme, primary);
+}
+

@@ -1,0 +1,21 @@
+<div #container class="grpc-debug-container">
+  <div class="rpc-list" [style.flex-basis.px]="panelWidths[0]">
+    <h3 class="panel-title">RPC</h3>
+    <mat-list>
+      <mat-list-item *ngFor="let req of requests" (click)="selectRequest(req)" [class.selected]="req === selectedRequest">
+        <span matListItemTitle>{{ req.rpc }}</span>
+        <span matListItemLine>{{ req.timestamp | date:'mediumTime' }}</span>
+      </mat-list-item>
+    </mat-list>
+  </div>
+  <div class="splitter" (mousedown)="onMouseDown(0, $event)"></div>
+  <div class="request-panel" [style.flex-basis.px]="panelWidths[1]">
+    <h3 class="panel-title">Request</h3>
+    <pre *ngIf="selectedRequest">{{ selectedRequest.request | json }}</pre>
+  </div>
+  <div class="splitter" (mousedown)="onMouseDown(1, $event)"></div>
+  <div class="response-panel" [style.flex-basis.px]="panelWidths[2]">
+    <h3 class="panel-title">Response</h3>
+    <pre *ngIf="selectedRequest">{{ selectedRequest.response | json }}</pre>
+  </div>
+</div>

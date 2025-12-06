@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatListModule } from '@angular/material/list';
-import {RouterOutlet, RouterLink, RouterLinkActive} from '@angular/router';
+import { RouterOutlet, RouterLink } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { Place } from '../../place/place';
 import { OVERVIEW_PLACE } from '../../place/overview.place';
@@ -23,9 +23,7 @@ import { OVERVIEW_PLACE } from '../../place/overview.place';
     MatMenuModule,
     RouterOutlet,
     RouterLink,
-    // Add MatListModule for the sidenav
-    MatListModule,
-    RouterLinkActive
+    MatListModule
   ],
   templateUrl: './layout.html',
   styleUrls: ['./layout.scss']

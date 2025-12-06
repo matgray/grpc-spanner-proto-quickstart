@@ -1,1 +1,4 @@
 <router-outlet />
+
+<app-fab (fabClick)="toggleDebug()"></app-fab>
+<app-grpc-debug *ngIf="showDebug"></app-grpc-debug>

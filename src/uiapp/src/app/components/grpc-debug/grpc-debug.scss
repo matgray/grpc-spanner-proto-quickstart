@@ -1,0 +1,56 @@
+:host(.grpc-debug-panel) {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 300px;
+  border-top: 1px solid #ccc;
+  z-index: 999;
+}
+
+.grpc-debug-container {
+  display: flex;
+  height: 100%;
+}
+
+.rpc-list {
+  width: 20%;
+  overflow-y: auto;
+  border-right: 1px solid #ccc;
+}
+
+.request-panel,
+.response-panel {
+  width: 40%;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.request-panel {
+  border-right: 1px solid #ccc;
+}
+
+
+.selected {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .selected {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.panel-title {
+  padding: 0 16px;
+  margin: 0;
+  font-weight: 500;
+  line-height: 48px;
+}
+
+
+
+.splitter {
+  flex-basis: 5px;
+  cursor: col-resize;
+}
+
