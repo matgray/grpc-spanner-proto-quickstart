@@ -1,5 +1,12 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './services/auth.guard';
+import { Place } from './place/place';
+import { OVERVIEW_PLACE } from './place/overview.place';
+
+const appPlaces: Place[] = [
+    OVERVIEW_PLACE,
+    // Add other places here
+];
 
 export const routes: Routes = [
     {
@@ -11,17 +18,13 @@ export const routes: Routes = [
         loadComponent: () => import('./components/layout/layout').then(m => m.LayoutComponent),
         canActivate: [authGuard],
         children: [
-            {
-                path: 'overview',
-                loadComponent: () => import('./components/overview/overview').then(m => m.OverviewComponent)
-            },
-            {
-                path: 'profile',
-                loadComponent: () => import('./components/profile/profile').then(m => m.ProfileComponent)
-            },
+            ...appPlaces.map(place => ({
+                path: place.path,
+                loadComponent: () => Promise.resolve(place.component).then(m => m),
+            })),
             {
                 path: '',
-                redirectTo: '/overview',
+                redirectTo: appPlaces[0].path, // Redirect to the first place by default
                 pathMatch: 'full'
             }
         ]
