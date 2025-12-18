@@ -5,11 +5,15 @@ import { CustomerInfo } from '../grpc/customer.pb';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { GrpcLoggingService } from './grpc.logging.service';
+import { Session } from '../grpc/customer.pb'; // Import Session
+import { SessionValidationResponse, ValidationStatus } from '../grpc/customer-service.pb'; // Import new types
 
 @Injectable({
   providedIn: 'root'
 })
 export class GrpcService {
+
+  private readonly serviceName = 'CustomerService';
 
   constructor(
     private client: CustomerServiceClient,
@@ -22,7 +26,7 @@ export class GrpcService {
     request.password = password;
 
     return this.client.addCustomer(request).pipe(
-      tap(response => this.loggingService.addRequest('addCustomer', request, response))
+      tap(response => this.loggingService.addRequest(`${this.serviceName}/AddCustomer`, request, response))
     );
   }
 
@@ -34,7 +38,15 @@ export class GrpcService {
     request.usernamePassword = bundle;
 
     return this.client.login(request).pipe(
-      tap(response => this.loggingService.addRequest('login', request, response))
+      tap(response => this.loggingService.addRequest(`${this.serviceName}/Login`, request, response))
+    );
+  }
+
+  validateSession(sessionId: string): Observable<SessionValidationResponse> {
+    const session = new Session();
+    session.sessionId = sessionId;
+    return this.client.validateSession(session).pipe(
+        tap(response => this.loggingService.addRequest(`${this.serviceName}/ValidateSession`, session, response))
     );
   }
 }

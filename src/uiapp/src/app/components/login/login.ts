@@ -73,7 +73,7 @@ export class LoginComponent {
     } else {
       this.grpcService.login(userName, password).subscribe({
         next: (response) => {
-          if (response.session?.sessionId != null) {
+          if (!response.session?.sessionId) {
             console.log('Login failed', response);
             this.errorMessage = response.errorCode.toString();
             return;

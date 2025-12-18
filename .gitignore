@@ -37,3 +37,4 @@ thumbs.db
 
 # Spanner Emulator
 *.pb
+/.generated-schema/

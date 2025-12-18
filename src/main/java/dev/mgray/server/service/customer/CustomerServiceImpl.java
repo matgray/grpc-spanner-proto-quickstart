@@ -18,6 +18,8 @@ import dev.mgray.schema.customer.CustomerInfo;
 import dev.mgray.schema.customer.Security;
 import dev.mgray.schema.customer.Session;
 import dev.mgray.server.service.customer.CustomerServiceOuterClass.*;
+import dev.mgray.server.service.customer.CustomerServiceOuterClass.SessionValidationResponse;
+import dev.mgray.server.service.customer.CustomerServiceOuterClass.ValidationStatus;
 import io.grpc.stub.StreamObserver;
 
 import javax.crypto.SecretKeyFactory;
@@ -32,8 +34,8 @@ import java.util.Base64;
 public class CustomerServiceImpl extends CustomerServiceImplBase {
     private static final String INSERT_CUSTOMER_SQL =
             String.format("INSERT INTO Customer (%s, %s, %s) VALUES (@user_name, @info, @security) THEN RETURN %s", CustomerSchema.USER_NAME, CustomerSchema.INFO, CustomerSchema.SECURITY, CustomerSchema.CUSTOMER_ID);
-    private static final String INSERT_SESSION_SQL =
-            String.format("INSERT INTO Customer (%s) VALUES (@session) WHERE %s=@customerId", CustomerSchema.SESSION, CustomerSchema.CUSTOMER_ID);
+    private static final String UPDATE_SESSION_SQL =
+            String.format("UPDATE Customer SET %s = @session WHERE %s = @customerId", CustomerSchema.SESSION, CustomerSchema.CUSTOMER_ID);
 
     // The hashing algorithm to use. PBKDF2 with HMAC-SHA256 is a widely used and recommended standard for password hashing.
     private static final String HASH_ALGORITHM = "PBKDF2WithHmacSHA256";
@@ -105,6 +107,32 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void validateSession(Session request, StreamObserver<SessionValidationResponse> responseObserver) {
+        SessionValidationResponse.Builder responseBuilder = SessionValidationResponse.newBuilder();
+        try {
+            Statement stmt = Statement.newBuilder(String.format("SELECT %s FROM Customer WHERE %s.session_id = @sessionId", CustomerSchema.CUSTOMER_ID, CustomerSchema.SESSION))
+                    .bind("sessionId").to(request.getSessionId())
+                    .build();
+
+            try (ResultSet rs = dbClient.singleUse().executeQuery(stmt)) {
+                if (rs.next()) {
+                    // A customer with this session ID was found
+                    responseBuilder.setStatus(ValidationStatus.VALID);
+                } else {
+                    // No customer with this session ID was found
+                    responseBuilder.setStatus(ValidationStatus.INVALID);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            responseBuilder.setStatus(ValidationStatus.VALIDATION_UNKNOWN);
+        } finally {
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+        }
+    }
+
     private LoginResponse login(LoginRequest request) throws InvalidProtocolBufferException {
         if (request.hasUsernamePassword()) {
             Statement stmt = Statement.newBuilder(String.format("SELECT %s, %s, %s FROM Customer WHERE %s = @userName", CustomerSchema.CUSTOMER_ID, CustomerSchema.INFO, CustomerSchema.SECURITY, CustomerSchema.USER_NAME))
@@ -120,14 +148,20 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
                                 .build();
                     }
                     long customerId = rs.getLong(CustomerSchema.CUSTOMER_ID);
+                    Session session = newSession(customerId);
                     return LoginResponse.newBuilder()
                             .setCustomerId(customerId)
-                            .setSession(newSession(customerId))
+                            .setSession(session)
                             .build();
                 }
             }
+              return LoginResponse.newBuilder()
+                .setErrorCode(LoginErrorCode.CUSTOMER_DOES_NOT_EXIST)
+                .build();
         }
-        return null;
+        return LoginResponse.newBuilder()
+                .setErrorCode(LoginErrorCode.CUSTOMER_DOES_NOT_EXIST)
+                .build();
     }
 
     // Extracted method for better readability and reuse
@@ -179,9 +213,11 @@ public class CustomerServiceImpl extends CustomerServiceImplBase {
     private Session newSession(long customerId) {
         Session s = Session.newBuilder().setSessionId(generateRandomSessionId(32)).build();
         dbClient.readWriteTransaction().run(tx -> {
-            Statement statement = Statement.newBuilder(INSERT_SESSION_SQL)
-                    .bind("customerId").to(customerId).build();
-            tx.executeQuery(statement);
+            Statement statement = Statement.newBuilder(UPDATE_SESSION_SQL)
+                    .bind("customerId").to(customerId)
+                    .bind("session").to(s)
+                    .build();
+            tx.executeUpdate(statement);
             return null;
         });
         return s;

@@ -9,7 +9,8 @@ services:
 
   grpc-server:
     build: .
-    # No ports exposed directly, will be accessed through envoy
+    ports:
+      - "5005:5005" # Java debug port
     depends_on:
       - spanner-emulator
     environment:
@@ -17,6 +18,8 @@ services:
       - SPANNER_PROJECT_ID=test-project
       - SPANNER_INSTANCE_ID=test-instance
       - SPANNER_DATABASE_ID=test-db
+      - ENABLE_DEBUG=true
+      - DEBUG_SUSPEND=n
 
   angular-app:
     build:

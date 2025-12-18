@@ -10,5 +10,6 @@ COPY db_schema db_schema
 COPY --from=builder /app/target/generated-resources/protobuf/descriptor_set.protobin target/generated-resources/protobuf/descriptor_set.protobin
 COPY populate_db.sh .
 COPY docker_run_db_populator.sh .
-RUN chmod +x populate_db.sh docker_run_db_populator.sh
-CMD ["/bin/bash", "-c", "sleep 10 && ./docker_run_db_populator.sh && java -jar mgray-dev-starterkit-1.0-SNAPSHOT.jar"]
+COPY run_server.sh .
+RUN chmod +x populate_db.sh docker_run_db_populator.sh run_server.sh
+CMD ["./run_server.sh"]

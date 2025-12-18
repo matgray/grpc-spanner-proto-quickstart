@@ -14,8 +14,8 @@ export class GrpcLoggingService {
   addRequest(rpc: string, request: any, response: any) {
     const newRequest: DebugRequest = {
       rpc,
-      request: request.toObject(),
-      response: response.toObject(),
+      request: request.toProtobufJSON(),
+      response: response.toProtobufJSON(),
       timestamp: new Date()
     };
     const currentRequests = this.requestsSubject.getValue();

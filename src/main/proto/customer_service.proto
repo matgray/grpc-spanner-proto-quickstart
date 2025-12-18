@@ -7,6 +7,17 @@ package dev.mgray.server.service.customer;
 service CustomerService {
   rpc AddCustomer(AddCustomerRequest) returns (LoginResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ValidateSession(.dev.mgray.db.schema.customer.Session) returns (SessionValidationResponse);
+}
+
+message SessionValidationResponse {
+  ValidationStatus status = 1;
+}
+
+enum ValidationStatus {
+  VALIDATION_UNKNOWN = 0;
+  VALID = 1;
+  INVALID = 2;
 }
 
 message AddCustomerRequest {
@@ -36,4 +47,6 @@ enum LoginErrorCode {
   UNKNOWN = 0;
   USER_NAME_ALREADY_IN_USE = 1;
   INVALID_CREDENTIALS = 2;
+  CUSTOMER_DOES_NOT_EXIST = 3;
+  INVALID_REQUEST= 4;
 }
